@@ -80,10 +80,6 @@ func trimQuotes(s string) string {
 }
 
 func jgrep(src interface{}, paths []string) {
-	fmt.Println("jgrep ------")
-	fmt.Printf("src = %v\n", src)
-	fmt.Printf("paths = %v\n", paths)
-
 	// check that we have any path's left, 
 	// if not, print whats left of src in json format and return
 	if len(paths) == 0 {
