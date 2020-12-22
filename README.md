@@ -1,5 +1,5 @@
-jgrep (go-lang version)
-=======================
+jgrep
+=====
 
 Simple JSON grep, usage : jgrep "path/path/path" [filename]
 
@@ -13,6 +13,13 @@ Each 'path' element can be:
 * a comma separated list of keys. The combined output is comma separated.
 * an 'equal' key=value to select a specific key
 
+INSTALL
+-------
+
+    brew tap frese/frese; brew install jgrep
+
 TODO
 ----
+* lots; this is a very premature release, mostly a project converting an old python version to go-lang and to setup homebrew distribution
 * allow regular expressions in searches for keys and values
+* options to control output format
