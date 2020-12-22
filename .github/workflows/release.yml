@@ -1,0 +1,35 @@
+name: Release Go project
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+' # Only build tag with semantic versioning format
+
+
+jobs:
+  build:
+    name: GoReleaser build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # See: https://goreleaser.com/ci/actions/
+
+      - name: Install upx
+        run: sudo apt-get install -y upx
+      - name: Set up Go 1.15
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.15
+        id: go
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@master
+        with:
+          version: latest
+          args: -f .goreleaser.yml release --rm-dist
+          workdir: ./cmd/
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}

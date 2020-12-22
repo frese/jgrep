@@ -1,0 +1,13 @@
+{
+    "key": "value",
+    "array": [
+        { "key": "value-a", "key2": "value-a2"},
+        { "key": "value-b", "key2": "value-b2"},
+        { "key": "value-c", "key2": "value-c2"},
+        { "key": "value-d", "key2": "value-d2"},
+        { "key": "value-e", "key2": "value-e2"}
+    ],
+    "array2": [
+        "abcd", "1234", "xyz"
+    ]
+}

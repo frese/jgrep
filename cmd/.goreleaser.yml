@@ -1,0 +1,43 @@
+
+env:
+  - GO111MODULE=on
+  - GOPROXY=https://goproxy.io
+
+before:
+  hooks:
+  - go mod download
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+    ignore:
+      - goos: darwin
+        goarch: 386
+      - goos: linux
+        goarch: arm
+        goarm: 7
+      - goarm: mips64
+        gomips: hardfloat
+
+archives:
+  - name_template: "jgrep_{{ .Version }}_{{ .Os }}_{{ .Arch }}"  
+    replacements:
+      amd64: x86_64
+
+project_name: jgrep
+
+brews:
+  - homepage: 'https://github.com/frese/jgrep'
+    description: 'Homebrew distibution of jgrep, the ultimate JSON grep`er.'
+    folder: Formula
+    commit_author:
+      name: frese
+      email: allan@frese.com
+    tap:
+      owner: frese
+      name: homebrew-frese
