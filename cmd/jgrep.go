@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-	var source map[string]interface{}
+	var source interface{}
 	var paths []string
 
 	helpOpt := flag.Bool("h", false, "Print usage message")
