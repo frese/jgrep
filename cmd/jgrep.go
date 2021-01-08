@@ -67,28 +67,23 @@ func main() {
 	}
 
 	// run through the json, hunting after wanted "path"s
-	jgrep(source, paths)
+	res := jgrep(source, paths)
+	js, err := json.MarshalIndent(res, "", " ")
+	if err != nil {
+		log.Fatalf("Failed to marchal json: %s", err)
+	}
+	fmt.Println(trimQuotes(string(js)))
 }
 
-func trimQuotes(s string) string {
-    if len(s) >= 2 {
-        if s[0] == '"' && s[len(s)-1] == '"' {
-            return s[1 : len(s)-1]
-        }
-    }
-    return s
-}
+func jgrep(src interface{}, paths []string) interface{} {
+	
+	var res []interface{}
 
-func jgrep(src interface{}, paths []string) {
+	// fmt.Printf("DEBUG: interface: %v - paths: %v\n", src, paths)
 	// check that we have any path's left, 
 	// if not, print whats left of src in json format and return
 	if len(paths) == 0 {
-		js, err := json.MarshalIndent(src, "", " ")
-		if err != nil {
-			log.Fatalf("Failed to marchal json: %s", err)
-		}
-		fmt.Println(trimQuotes(string(js)))
-		return
+		return src
 	}
 
 	// lets work on the first path's
@@ -98,27 +93,26 @@ func jgrep(src interface{}, paths []string) {
 	//------------------------------------------
 	case strings.Contains(p1, ","):
 		ps := strings.Split(p1, ",")
-		for c, part := range ps {
-			jgrep(src, append([]string{part}, paths[1:]...))
-			if c<len(ps)-1 {
-				fmt.Print(",")
-			}
+		for _, part := range ps {
+			res = append(res, jgrep(src, append([]string{part}, paths[1:]...)))
 		}
+		return res
 
 	//------------------------------------------
 	case strings.Compare(p1, "*") == 0:
 		switch t:= src.(type) {
 		case []interface{}:
 			for _, element := range t {
-				jgrep(element, paths[1:])
+				res = append(res, jgrep(element, paths[1:]))
 			}
 		case map[string]interface{}:
 			for _, element := range t {
-				jgrep(element, paths[1:])
+				res = append(res, jgrep(element, paths[1:]))
 			}
 		default:
 			log.Fatalf("Expected an array, got %v", src)
 		}
+		return res
 
 	//------------------------------------------
 	case strings.Contains(p1, "="):
@@ -134,7 +128,7 @@ func jgrep(src interface{}, paths []string) {
 		case []map[string]interface{}:
 			for _, element := range t {
 				if element[k] == v {
-					jgrep(element, paths[1:])
+					return jgrep(element, paths[1:])
 				}
 			}
 		default:
@@ -149,7 +143,7 @@ func jgrep(src interface{}, paths []string) {
 			if err != nil {
 				log.Fatalln("Expected integer")
 			}
-			jgrep(t[int2], paths[1:])
+			return jgrep(t[int2], paths[1:])
 		default:
 			log.Fatalf("Expected an array, got %v", src)
 		}
@@ -158,11 +152,12 @@ func jgrep(src interface{}, paths []string) {
 	default:
 		switch t:= src.(type) {
 		case map[string]interface{}:
-			jgrep(t[p1], paths[1:])
+			return jgrep(t[p1], paths[1:])
 		default:
 			log.Fatalf("Expected map of strings, got %v", src)
 		}
 	}
+	return nil
 }
 
 // IsNumeric returns if a string can be interpreted as numeric
@@ -170,3 +165,12 @@ func IsNumeric(s string) bool {
 	_, err := strconv.ParseFloat(s, 64)
 	return err == nil
  }
+
+func trimQuotes(s string) string {
+    if len(s) >= 2 {
+        if s[0] == '"' && s[len(s)-1] == '"' {
+            return s[1 : len(s)-1]
+        }
+    }
+    return s
+}
