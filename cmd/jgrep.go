@@ -99,8 +99,7 @@ func jgrep(src interface{}, paths []string) {
 	case strings.Contains(p1, ","):
 		ps := strings.Split(p1, ",")
 		for c, part := range ps {
-			paths[0] = part
-			jgrep(src, paths)
+			jgrep(src, append([]string{part}, paths[1:]...))
 			if c<len(ps)-1 {
 				fmt.Print(",")
 			}
