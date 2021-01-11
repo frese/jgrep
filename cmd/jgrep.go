@@ -29,7 +29,7 @@ func main() {
         fmt.Println("- 'string' specifying a particular key in an object")
         fmt.Println("- 'number' specifying an index in an array")
         fmt.Println("- '*' all objects in given hash or array")
-        fmt.Println("- 'key=value' specifying a particular object in a hash")
+        fmt.Println("- 'key=value' selects hash'es containing the given key=value field")
         fmt.Println("- comma separated list of the above, each will be evaluated and printed comma separated")
         fmt.Println("If no file is specified, jgrep reads from stdin.")
         fmt.Println("The value of the last object(s) will be printed to stdout")
@@ -125,12 +125,16 @@ func jgrep(src interface{}, paths []string) interface{} {
 		v := parts[1]
 
 		switch t:= src.(type) {
-		case []map[string]interface{}:
+		case []interface{}:
 			for _, element := range t {
-				if element[k] == v {
-					return jgrep(element, paths[1:])
+				switch m := element.(type) {
+				case map[string]interface{}:
+					if v == fmt.Sprintf("%v", m[k]) {
+						res = append(res, jgrep(element, paths[1:]))
+					}
 				}
 			}
+			return res
 		default:
 			log.Fatalf("Expected an array of maps, got %v", src)
 		}
