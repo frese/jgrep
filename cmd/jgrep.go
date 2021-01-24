@@ -18,13 +18,17 @@ func main() {
 	var paths []string
 
 	helpOpt := flag.Bool("h", false, "Print usage message")
+	textOut := flag.Bool("t", false, "Output in text format")
 	flag.Parse()
 	
 	// get the 'path' argument that we want to grep for
 	pathArg := flag.Args()
 
 	if len(pathArg) == 0 || *helpOpt {
-		fmt.Println("Usage: jgrep 'path/path/...' [file]")
+		fmt.Println("Usage: jgrep [-options] 'path/path/...' [file]")
+		fmt.Println("Options:")
+		fmt.Println("  -t text output (default is json")
+		fmt.Println("  -h print help")
         fmt.Println("Where path is:")
         fmt.Println("- 'string' specifying a particular key in an object")
         fmt.Println("- 'number' specifying an index in an array")
@@ -68,11 +72,17 @@ func main() {
 
 	// run through the json, hunting after wanted "path"s
 	res := jgrep(source, paths)
-	js, err := json.MarshalIndent(res, "", " ")
-	if err != nil {
-		log.Fatalf("Failed to marchal json: %s", err)
+
+	// Write the results
+	if *textOut {
+		textOutput(res)
+	} else {
+		js, err := json.MarshalIndent(res, "", " ")
+		if err != nil {
+			log.Fatalf("Failed to marchal json: %s", err)
+		}
+		fmt.Println(trimQuotes(string(js)))
 	}
-	fmt.Println(trimQuotes(string(js)))
 }
 
 func jgrep(src interface{}, paths []string) interface{} {
@@ -177,4 +187,23 @@ func trimQuotes(s string) string {
         }
     }
     return s
+}
+
+func textOutput(src interface{}) {
+	switch t:=src.(type) {
+	case []interface{}:
+		for _, element := range t {
+			textOutput(element)
+		}
+	case map[string]interface{}:
+		for k, v := range t{
+			fmt.Printf("%s = ", k)
+			textOutput(v)
+		}
+	case string, int:
+		fmt.Println(t)
+	default:
+		fmt.Printf("%v\n", t)
+	}
+
 }
