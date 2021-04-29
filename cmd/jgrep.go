@@ -11,13 +11,19 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"gopkg.in/yaml.v2"
 )
 
 func main() {
 	var source interface{}
 	var paths []string
+	var outputFormat string
 
+	outputFormat = ""
 	helpOpt := flag.Bool("h", false, "Print usage message")
+	jsonOut := flag.Bool("j", false, "Output in json format")
+	yamlOut := flag.Bool("y", false, "Output in yaml format")
 	textOut := flag.Bool("t", false, "Output in text format")
 	flag.Parse()
 	
@@ -27,12 +33,15 @@ func main() {
 	if len(pathArg) == 0 || *helpOpt {
 		fmt.Println("Usage: jgrep [-options] 'path/path/...' [file]")
 		fmt.Println("Options:")
-		fmt.Println("  -t text output (default is json")
+		fmt.Println("  -j json output")
+		fmt.Println("  -y yaml output")
+		fmt.Println("  -t text output")
 		fmt.Println("  -h print help")
         fmt.Println("Where path is:")
         fmt.Println("- 'string' specifying a particular key in an object")
         fmt.Println("- 'number' specifying an index in an array")
-        fmt.Println("- '*' all objects in given hash or array")
+        fmt.Println("- '*' all keys in given hash or all entries in an array")
+        fmt.Println("- '**' all objects in given hash or array, needs to be the last path")
         fmt.Println("- 'key=value' selects hash'es containing the given key=value field")
         fmt.Println("- comma separated list of the above, each will be evaluated and printed comma separated")
         fmt.Println("If no file is specified, jgrep reads from stdin.")
@@ -64,24 +73,42 @@ func main() {
 
 	}
 
-	// Unmarshal the json from buffer
+	// Unmarshal the json/yaml from buffer
 	err := json.Unmarshal(buf.Bytes(), &source)
 	if err != nil {
-		log.Fatalf("Failed to parse json: %s", err)
+		err := Unmarshal(buf.Bytes(), &source)
+		if err != nil {
+			log.Fatalf("Failed to parse input as either json or yaml: %s", err)
+		}
+		outputFormat = "yaml" // set default output format
+	} else {
+		outputFormat = "json" // set default output format
 	}
+
+	// overwrite output format from flags
+	if *jsonOut { outputFormat = "json" }
+	if *yamlOut { outputFormat = "yaml" }
+	if *textOut { outputFormat = "text" }
 
 	// run through the json, hunting after wanted "path"s
 	res := jgrep(source, paths)
 
 	// Write the results
-	if *textOut {
-		textOutput(res)
-	} else {
-		js, err := json.MarshalIndent(res, "", " ")
+	switch outputFormat {
+	case "text":
+			textOutput(res, "")
+	case "json":
+		out, err := json.MarshalIndent(res, "", " ")
 		if err != nil {
 			log.Fatalf("Failed to marchal json: %s", err)
 		}
-		fmt.Println(trimQuotes(string(js)))
+		fmt.Println(trimQuotes(string(out)))
+	case "yaml":
+		out, err := yaml.Marshal(res)
+		if err != nil {
+			log.Fatalf("Failed to marchal yaml: %s", err)
+		}
+		fmt.Println(trimQuotes(string(out)))
 	}
 }
 
@@ -90,10 +117,9 @@ func jgrep(src interface{}, paths []string) interface{} {
 	var res []interface{}
 
 	// fmt.Printf("DEBUG: interface: %v - paths: %v\n", src, paths)
-	// check that we have any path's left, 
-	// if not, print whats left of src in json format and return
+	// check that we have any path's left, if not, return whats left of src
 	if len(paths) == 0 {
-		return src
+		return nil
 	}
 
 	// lets work on the first path's
@@ -109,20 +135,30 @@ func jgrep(src interface{}, paths []string) interface{} {
 		return res
 
 	//------------------------------------------
+	case strings.Compare(p1, "**") == 0:
+		if len(paths) != 1 {
+			log.Fatalln("The path expression '**' should to be that last!")
+		}
+		return src
+
+	//------------------------------------------
 	case strings.Compare(p1, "*") == 0:
 		switch t:= src.(type) {
 		case []interface{}:
-			for _, element := range t {
-				res = append(res, jgrep(element, paths[1:]))
+			var res []interface{}
+			for count, element := range t {
+				res[count] = jgrep(element, paths[1:])
 			}
+			return res
 		case map[string]interface{}:
-			for _, element := range t {
-				res = append(res, jgrep(element, paths[1:]))
+			res := make(map[string]interface{})
+			for key, element := range t {
+				res[key] = jgrep(element, paths[1:])
 			}
+			return res
 		default:
-			log.Fatalf("Expected an array, got %v", src)
+			return src
 		}
-		return res
 
 	//------------------------------------------
 	case strings.Contains(p1, "="):
@@ -166,13 +202,16 @@ func jgrep(src interface{}, paths []string) interface{} {
 	default:
 		switch t:= src.(type) {
 		case map[string]interface{}:
-			return jgrep(t[p1], paths[1:])
+			res := make(map[string]interface{})
+			res[p1] = jgrep(t[p1], paths[1:])
+			return res
 		default:
-			log.Fatalf("Expected map of strings, got %v", src)
+			log.Fatalf("Expected map of strings, got %+v", src)
 		}
 	}
 	return nil
 }
+
 
 // IsNumeric returns if a string can be interpreted as numeric
 func IsNumeric(s string) bool {
@@ -189,21 +228,68 @@ func trimQuotes(s string) string {
     return s
 }
 
-func textOutput(src interface{}) {
+func textOutput(src interface{}, prefix string) {
 	switch t:=src.(type) {
 	case []interface{}:
 		for _, element := range t {
-			textOutput(element)
+			textOutput(element, prefix)
 		}
 	case map[string]interface{}:
 		for k, v := range t{
-			fmt.Printf("%s = ", k)
-			textOutput(v)
+			var newprefix string
+			if prefix == "" {
+				newprefix = k
+			} else {
+				newprefix = prefix + ":" + k
+			}
+			textOutput(v, newprefix)
 		}
 	case string, int:
-		fmt.Println(t)
+		fmt.Printf("%v: %v\n", prefix, t)
+	case nil:
+		fmt.Printf("%v\n", prefix)
 	default:
-		fmt.Printf("%v\n", t)
+		fmt.Printf("%v: %v\n", prefix, t)
 	}
+}
 
+// Unmarshal YAML to map[string]interface{} instead of map[interface{}]interface{}.
+func Unmarshal(in []byte, out interface{}) error {
+    var res interface{}
+
+    if err := yaml.Unmarshal(in, &res); err != nil {
+        return err
+    }
+    *out.(*interface{}) = cleanupMapValue(res)
+
+    return nil
+}
+
+func cleanupInterfaceArray(in []interface{}) []interface{} {
+    res := make([]interface{}, len(in))
+    for i, v := range in {
+        res[i] = cleanupMapValue(v)
+    }
+    return res
+}
+
+func cleanupInterfaceMap(in map[interface{}]interface{}) map[string]interface{} {
+    res := make(map[string]interface{})
+    for k, v := range in {
+        res[fmt.Sprintf("%v", k)] = cleanupMapValue(v)
+    }
+    return res
+}
+
+func cleanupMapValue(v interface{}) interface{} {
+    switch v := v.(type) {
+    case []interface{}:
+        return cleanupInterfaceArray(v)
+    case map[interface{}]interface{}:
+        return cleanupInterfaceMap(v)
+    case string:
+        return v
+    default:
+        return fmt.Sprintf("%v", v)
+    }
 }
