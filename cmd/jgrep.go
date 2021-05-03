@@ -146,8 +146,8 @@ func jgrep(src interface{}, paths []string) interface{} {
 		switch t:= src.(type) {
 		case []interface{}:
 			var res []interface{}
-			for count, element := range t {
-				res[count] = jgrep(element, paths[1:])
+			for _, element := range t {
+				res = append(res, jgrep(element, paths[1:]))
 			}
 			return res
 		case map[string]interface{}:

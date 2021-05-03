@@ -33,7 +33,7 @@ project_name: jgrep
 
 brews:
   - homepage: 'https://github.com/frese/jgrep'
-    description: 'Homebrew distibution of jgrep, the ultimate JSON grep`er.'
+    description: 'Homebrew distibution of jgrep, the ultimate JSON (and YAML) grep`er.'
     folder: Formula
     commit_author:
       name: frese
