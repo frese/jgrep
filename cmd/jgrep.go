@@ -202,9 +202,7 @@ func jgrep(src interface{}, paths []string) interface{} {
 	default:
 		switch t:= src.(type) {
 		case map[string]interface{}:
-			res := make(map[string]interface{})
-			res[p1] = jgrep(t[p1], paths[1:])
-			return res
+			return jgrep(t[p1], paths[1:])
 		default:
 			log.Fatalf("Expected map of strings, got %+v", src)
 		}
@@ -245,11 +243,11 @@ func textOutput(src interface{}, prefix string) {
 			textOutput(v, newprefix)
 		}
 	case string, int:
-		fmt.Printf("%v: %v\n", prefix, t)
+		fmt.Printf("%v%v\n", prefix, t)
 	case nil:
 		fmt.Printf("%v\n", prefix)
 	default:
-		fmt.Printf("%v: %v\n", prefix, t)
+		fmt.Printf("%v%v\n", prefix, t)
 	}
 }
 
