@@ -50,27 +50,34 @@ func main() {
 	}
 
 	paths = strings.Split(pathArg[0], "/")
+	var buf bytes.Buffer
+	var reader bufio.Reader
 
 	// check if pathArg[1] is defined, this is filename to read, if not defined read from stdin
-	// TODO
+	if len(pathArg) > 1 {
+		f, err := os.Open(pathArg[1])
+		if err != nil {
+			log.Fatal("Cannot open file.")
+		}
+		reader = *bufio.NewReader(f)
+		defer f.Close()
+	} else {
+		// read json/yaml from stdin to buf
+		reader = *bufio.NewReader(os.Stdin)
+	}
 
-	// read json from stdin to buf
-	var buf bytes.Buffer
-    reader := bufio.NewReader(os.Stdin)
-
-    for {
-        line, err := reader.ReadString('\n')
-        if err != nil {
-            if err == io.EOF {
-                buf.WriteString(line)
-                break // end of the input
-            } else {
-                fmt.Println(err.Error())
-                os.Exit(1) // something bad happened
-            }   
-        }   
-        buf.WriteString(line)
-
+	for {
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				buf.WriteString(line)
+				break // end of the input
+			} else {
+				fmt.Println(err.Error())
+				os.Exit(1) // something bad happened
+			}   
+		}   
+		buf.WriteString(line)
 	}
 
 	// Unmarshal the json/yaml from buffer
