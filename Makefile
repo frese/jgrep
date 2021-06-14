@@ -1,7 +1,7 @@
 BINDIR := ~/bin
 GOPATH := $(shell go env GOPATH)
 
-.PHONY: $(BINDIR)jgrep
+.PHONY: $(BINDIR)/jgrep
 $(BINDIR)/jgrep:
 	go build -o $@ ./cmd/jgrep.go
 

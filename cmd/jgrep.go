@@ -251,12 +251,14 @@ func textOutput(src interface{}, prefix string, separator string) {
             }
             textOutput(v, newprefix, separator)
         }
-    case string, int:
-        fmt.Printf("%v%s%v\n", prefix, separator, t)
     case nil:
         fmt.Printf("%v\n", prefix)
     default:
-        fmt.Printf("%v%s%v\n", prefix, separator, t)
+        if prefix == "" {
+            fmt.Printf("%v\n", t)
+        } else {
+            fmt.Printf("%v%s%v\n", prefix, separator, t)
+        }
     }
 }
 
