@@ -1,17 +1,25 @@
 jgrep
 =====
 
-Simple JSON grep, usage : jgrep "path/path/path" [filename]
+Simple JSON/YAML grep, usage : jgrep [-options] "path/path/path" [file]
 
-__jgrep__ reads from file or stdin, traversing the json structure searching
-the specified 'path', printing the value of the last key.
+__jgrep__ reads from file or stdin, unmarshal the input weather it's json or yaml, traversing the structure searching
+the specified 'path', printing the values of what's been grep'ed in same format as input.
+
+Options:
+ - `-h` print help message
+ - `-j` output in json format
+ - `-y` output in yaml format
+ - `-t` output in text format
+ - `-s` separator character in text format, default is colon
 
 Each 'path' element can be:
-* a string specifying a key in an object
-* a number specifying an index in an array
-* a 'star' specifying all keys in object or indexes in array
-* a comma separated list of keys. The combined output is comma separated.
-* an 'equal' key=value to select a specific key
+ - 'string' specifying a specific key in an object
+ - 'number' specifying an index in an array
+ - 'star' specifying all keys in object or all indexes in array
+ - 'key=value' select hash'es containing the given key=value field
+ - '.' stop processing and ignore everything after this point
+ - comma separated list of the above, each will be evaluated and printed comma separated
 
 INSTALL
 -------
@@ -20,6 +28,5 @@ INSTALL
 
 TODO
 ----
-* lots; this is a very premature release, mostly a project converting an old python version to go-lang and to setup homebrew distribution
 * allow regular expressions in searches for keys and values
-* options to control output format
+* lots
