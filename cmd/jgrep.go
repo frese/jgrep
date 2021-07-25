@@ -25,7 +25,7 @@ func main() {
     jsonOut := flag.Bool("j", false, "Output in json format")
     yamlOut := flag.Bool("y", false, "Output in yaml format")
     textOut := flag.Bool("t", false, "Output in text format")
-    separator := flag.String("s", ":", "Output in text format")
+    separator := flag.String("s", ":", "Separator character for text format")
     flag.Parse()
     
     // get the 'path' argument that we want to grep for
@@ -37,7 +37,7 @@ func main() {
         fmt.Println("  -j json output")
         fmt.Println("  -y yaml output")
         fmt.Println("  -t text output")
-        fmt.Println("  -s separator character in text output, default is ':'")
+        fmt.Println("  -s separator character for text output, default is ':'")
         fmt.Println("  -h print help")
         fmt.Println("Where path is:")
         fmt.Println("- 'string' specifying a particular key in an object")
@@ -154,17 +154,23 @@ func jgrep(src interface{}, paths []string) interface{} {
     case strings.Compare(p1, "*") == 0:
         switch t:= src.(type) {
         case []interface{}:
-            var res []interface{}
+            var result []interface{}
             for _, element := range t {
-                res = append(res, jgrep(element, paths[1:]))
+                res := jgrep(element, paths[1:])
+                if res != nil {
+                    result = append(result, res)
+                }
             }
-            return res
+            return result
         case map[string]interface{}:
-            res := make(map[string]interface{})
-            for key, element := range t {
-                res[key] = jgrep(element, paths[1:])
+            var result []interface{}
+            for _, element := range t {
+                res := jgrep(element, paths[1:])
+                if res != nil { 
+                    result = append(result, res)
+                }
             }
-            return res
+            return result
         default:
             return src
         }
@@ -185,7 +191,7 @@ func jgrep(src interface{}, paths []string) interface{} {
                 switch m := element.(type) {
                 case map[string]interface{}:
                     if v == fmt.Sprintf("%v", m[k]) {
-                        res = append(res, jgrep(element, paths[1:]))
+                        res = append(res, jgrep(m, paths[1:]))
                     }
                 }
             }
