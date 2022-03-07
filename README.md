@@ -7,11 +7,11 @@ __jgrep__ reads from file or stdin, unmarshal the input weather it's json or yam
 the specified 'path', printing the values of what's been grep'ed in same format as input.
 
 Options:
- - `-h` print help message
- - `-j` output in json format
- - `-y` output in yaml format
- - `-t` output in text format
- - `-s` separator character in text format, default is colon
+  - `-h` print help message
+  - `-j` output in json format
+  - `-y` output in yaml format
+  - `-t` output in text format
+  - `-s` separator character in text format, default is colon
 
 Each 'path' element can be:
  - 'string' specifying a specific key in an object
